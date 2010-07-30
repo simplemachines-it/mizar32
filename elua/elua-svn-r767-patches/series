@@ -1,0 +1,3 @@
+elua-fix-std_get_desc-stub-type.patch
+evk1101_and_spi_for_svn765.patch -p0
+elua-add_mizar32-for_svn_r765.patch

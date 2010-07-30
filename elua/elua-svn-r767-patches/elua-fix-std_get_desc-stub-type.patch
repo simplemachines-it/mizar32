@@ -1,0 +1,12 @@
+diff -r -u -x .svn elua-svn/src/newlib/stubs.c elua-svn+mizar32/src/newlib/stubs.c
+--- elua-svn/src/newlib/stubs.c	2010-07-28 11:03:41.000000000 +0200
++++ elua-svn+mizar32/src/newlib/stubs.c	2010-07-29 17:51:26.000000000 +0200
+@@ -367,7 +367,7 @@
+ {
+ }
+ 
+-DM_DEVICE* std_get_desc()
++const DM_DEVICE* std_get_desc()
+ {
+   return NULL;
+ }
