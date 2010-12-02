@@ -1,0 +1,27 @@
+Index: elua-evk/src/main.c
+===================================================================
+--- elua-evk.orig/src/main.c	2010-09-30 20:59:06.010251241 +0200
++++ elua-evk/src/main.c	2010-09-30 21:02:56.185257985 +0200
+@@ -117,6 +117,7 @@
+   boot_rpc();
+ #else
+   
++#ifdef BUILD_SHELL
+   // Run the shell
+   if( shell_init() == 0 )
+   {
+@@ -127,6 +128,14 @@
+   }
+   else
+     shell_start();
++#else
++  {
++    // Start Lua directly
++    static char* lua_argv[] = { "lua", NULL };
++    lua_main( 1, lua_argv );
++  }
++#endif // #ifdef BUILD_SHELL
++
+ #endif // #ifdef ELUA_BOOT_RPC
+ 
+ #ifdef ELUA_SIMULATOR

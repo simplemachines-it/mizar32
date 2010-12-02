@@ -1,0 +1,10 @@
+elua-code-size-hacks.patch
+elua-disable-compat-flags.patch
+elua-remove-debug.patch
+elua-fix-stdin-crlf.patch
+elua-no-shell-sanity.patch
+mizar32-add-working-modules.patch
+lua-remove-hooks.patch
+lua-remove-dump.patch
+elua-fix-no-BUILD_RPC.patch
+mizar32-fix-sdcard-chipselect.patch
