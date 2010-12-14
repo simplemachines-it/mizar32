@@ -2,6 +2,8 @@ Make the inclusion of the Lua hooks mechanism, only useful when Lua is
 embedded in a larger C program, conditional on the definition of LUA_HOOKS.
 Saving in code: 512 bytes
 
+Note that the hook mechanism is needed by the new eLua interrupt mechanism.
+
 Index: elua-svn/src/lua/ldebug.c
 ===================================================================
 --- elua-svn.orig/src/lua/ldebug.c	2010-12-02 11:28:05.633727001 +0100

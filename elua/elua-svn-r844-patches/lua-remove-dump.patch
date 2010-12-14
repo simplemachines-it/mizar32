@@ -1,3 +1,12 @@
+Remove the dump/undump mechanisms for a code size saving of 3KB.
+These mechanisms encode and decode compiled Lua VM code and data for writing
+to files or transmission over the net in a platform-independent way.
+
+Note that the data dumper and undumper are used by the RPC mechanism and the
+code undumper is used to load precompiled Lua code from files (*.lc)
+
+This could be separated into two patches (one for dump, one for undump).
+
 Index: elua-svn/src/lua/lapi.c
 ===================================================================
 --- elua-svn.orig/src/lua/lapi.c	2010-12-02 11:27:42.365727000 +0100
