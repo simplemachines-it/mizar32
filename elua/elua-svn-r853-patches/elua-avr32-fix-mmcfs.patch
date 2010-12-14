@@ -1,0 +1,283 @@
+diff U3 src/platform/avr32//platform.c src/platform/avr32/platform.c
+Index: elua-svn/src/elua_mmc.c
+===================================================================
+--- elua-svn.orig/src/elua_mmc.c	2010-12-14 19:43:35.541245000 +0100
++++ elua-svn/src/elua_mmc.c	2010-12-14 19:43:40.393245000 +0100
+@@ -35,14 +35,14 @@
+ static
+ void SELECT (void)
+ {
+-    platform_pio_op( MMCFS_CS_PORT , ( ( u32 ) 1 << MMCFS_CS_PIN ), PLATFORM_IO_PIN_CLEAR );    
++	platform_spi_select( MMCFS_SPI_NUM, PLATFORM_SPI_SELECT_ON ); // select sd card pin
+ }
+ 
+ // de-asserts the CS pin to the card
+ static
+ void DESELECT (void)
+ {
+-    platform_pio_op( MMCFS_CS_PORT, ( ( u32 ) 1 << MMCFS_CS_PIN ), PLATFORM_IO_PIN_SET );
++	platform_spi_select( MMCFS_SPI_NUM, PLATFORM_SPI_SELECT_OFF ); // deselect sd card pin
+ }
+ 
+ 
+@@ -68,12 +68,11 @@
+ /* Transmit a byte to MMC via SPI  (Platform dependent)                  */
+ /*-----------------------------------------------------------------------*/
+ 
+-unsigned spi_id = 0;
+ 
+ static
+ void xmit_spi (BYTE dat)
+ {
+-    platform_spi_send_recv( spi_id, dat );
++    platform_spi_send_recv( MMCFS_SPI_NUM, dat );
+ }
+ 
+ 
+@@ -86,7 +85,7 @@
+ {
+     DWORD rcvdat;
+ 
+-    rcvdat  = platform_spi_send_recv( spi_id, 0xFF );
++    rcvdat  = platform_spi_send_recv( MMCFS_SPI_NUM, 0xFF );
+ 
+     return ( BYTE )rcvdat;
+ }
+@@ -148,10 +147,8 @@
+      */
+     
+     // Setup CS pin & deselect
+-    platform_pio_op( MMCFS_CS_PORT, ( ( u32 ) 1 << MMCFS_CS_PIN ), PLATFORM_IO_PIN_DIR_OUTPUT );
+-    //platform_pio_op( MMCFS_CS_PORT, ( ( u32 ) 1 << MMCFS_CS_PIN ), PLATFORM_IO_PIN_PULLUP );
+     DESELECT();
+-    
++
+     // Setup SPI
+     platform_spi_setup( MMCFS_SPI_NUM, PLATFORM_SPI_MASTER, 400000, 0, 0, 8 );
+ 
+Index: elua-svn/src/platform/avr32/EVK1100/evk1100_conf.h
+===================================================================
+--- elua-svn.orig/src/platform/avr32/EVK1100/evk1100_conf.h	2010-12-14 19:43:35.489245000 +0100
++++ elua-svn/src/platform/avr32/EVK1100/evk1100_conf.h	2010-12-14 19:43:40.393245000 +0100
+@@ -8,6 +8,7 @@
+ // *****************************************************************************
+ // Define here what components you want for this platform
+ 
++#define BUILD_MMCFS
+ #define BUILD_XMODEM
+ #define BUILD_SHELL
+ #define BUILD_ROMFS
+@@ -33,6 +34,8 @@
+ #define BOARD_SPI0_MISO_PIN_FUNCTION        0
+ #define BOARD_SPI0_MOSI_PIN                 AVR32_PIN_PA12
+ #define BOARD_SPI0_MOSI_PIN_FUNCTION        0
++#define BOARD_SPI0_CS_PIN                   AVR32_PIN_PA10
++#define BOARD_SPI0_CS_PIN_FUNCTION          0
+ 
+ #define BOARD_SPI1_SCK_PIN                  AVR32_PIN_PA15
+ #define BOARD_SPI1_SCK_PIN_FUNCTION         1
+@@ -40,6 +43,8 @@
+ #define BOARD_SPI1_MISO_PIN_FUNCTION        1
+ #define BOARD_SPI1_MOSI_PIN                 AVR32_PIN_PA16
+ #define BOARD_SPI1_MOSI_PIN_FUNCTION        1
++#define BOARD_SPI1_CS_PIN                   AVR32_PIN_PA18
++#define BOARD_SPI1_CS_PIN_FUNCTION          1
+ 
+ // *****************************************************************************
+ // Auxiliary libraries that will be compiled for this platform
+@@ -99,6 +104,11 @@
+ // REMEMBER to change next line if buffering is enabled and CON_UART_ID is not 0!
+ #define CON_UART_IRQ          AVR32_USART0_IRQ
+ 
++// SD/MMC Filesystem Setup
++#define MMCFS_TICK_HZ     10
++#define MMCFS_TICK_MS     ( 1000 / MMCFS_TICK_HZ )
++#define MMCFS_SPI_NUM     5
++
+ // CPU frequency (needed by the CPU module, 0 if not used)
+ #define CPU_FREQUENCY         REQ_CPU_FREQ
+ 
+Index: elua-svn/src/platform/avr32/MIZAR32/mizar32_conf.h
+===================================================================
+--- elua-svn.orig/src/platform/avr32/MIZAR32/mizar32_conf.h	2010-12-14 19:43:35.461245000 +0100
++++ elua-svn/src/platform/avr32/MIZAR32/mizar32_conf.h	2010-12-14 19:47:19.073245001 +0100
+@@ -11,7 +11,8 @@
+ 
+ // *****************************************************************************
+ // Define here what components you want for this platform
+-//#define BUILD_MMCFS
++
++#define BUILD_MMCFS
+ //#define BUILD_XMODEM
+ //#define BUILD_SHELL
+ //#define BUILD_ROMFS
+@@ -37,6 +38,8 @@
+ #define BOARD_SPI0_MISO_PIN_FUNCTION        0
+ #define BOARD_SPI0_MOSI_PIN                 AVR32_PIN_PA12
+ #define BOARD_SPI0_MOSI_PIN_FUNCTION        0
++#define BOARD_SPI0_CS_PIN                   AVR32_PIN_PA10
++#define BOARD_SPI0_CS_PIN_FUNCTION          0
+ 
+ #define BOARD_SPI1_SCK_PIN                  AVR32_PIN_PA15
+ #define BOARD_SPI1_SCK_PIN_FUNCTION         1
+@@ -44,6 +47,8 @@
+ #define BOARD_SPI1_MISO_PIN_FUNCTION        1
+ #define BOARD_SPI1_MOSI_PIN                 AVR32_PIN_PA16
+ #define BOARD_SPI1_MOSI_PIN_FUNCTION        1
++#define BOARD_SPI1_CS_PIN                   AVR32_PIN_PA14
++#define BOARD_SPI1_CS_PIN_FUNCTION          1
+ 
+ // Auxiliary libraries that will be compiled for this platform
+ 
+@@ -103,14 +108,10 @@
+ // REMEMBER to change next line if buffering is enabled and CON_UART_ID is not 0!
+ //#define CON_UART_IRQ          AVR32_USART0_IRQ
+ 
+-
+-// MMCFS Support (FatFs on SD/MMC)
+-// For MIZAR  - PA5 = CLK, PA6 = MISO, PA7 = MOSI, PA8 = CS
++// SD/MMC Filesystem Setup
+ #define MMCFS_TICK_HZ                10
+ #define MMCFS_TICK_MS                ( 1000 / MMCFS_TICK_HZ )
+-#define MMCFS_CS_PORT                0
+-#define MMCFS_CS_PIN                 SD_MMC_SPI_NPCS_PIN
+-#define MMCFS_SPI_NUM                1
++#define MMCFS_SPI_NUM                4
+ 
+ // CPU frequency (needed by the CPU module, 0 if not used)
+ #define CPU_FREQUENCY         REQ_CPU_FREQ
+Index: elua-svn/src/platform/avr32/platform.c
+===================================================================
+--- elua-svn.orig/src/platform/avr32/platform.c	2010-12-14 19:43:35.413245000 +0100
++++ elua-svn/src/platform/avr32/platform.c	2010-12-14 19:43:40.397245000 +0100
+@@ -187,10 +187,10 @@
+     spiopt.modfdis = TRUE;
+     spiopt.pcs_decode = FALSE;
+     spiopt.delay = 0;
+-    spi_initMaster(&AVR32_SPI0, &spiopt, REQ_PBA_FREQ);
++    spi_initMaster(&AVR32_SPI0, &spiopt, REQ_CPU_FREQ);
+     
+ #if NUM_SPI > 4
+-    spi_initMaster(&AVR32_SPI1, &spiopt, REQ_PBA_FREQ);
++    spi_initMaster(&AVR32_SPI1, &spiopt, REQ_CPU_FREQ);
+ #endif    
+ 
+ #endif
+@@ -576,12 +576,14 @@
+   { BOARD_SPI0_SCK_PIN, BOARD_SPI0_SCK_PIN_FUNCTION },
+   { BOARD_SPI0_MISO_PIN, BOARD_SPI0_MISO_PIN_FUNCTION },
+   { BOARD_SPI0_MOSI_PIN, BOARD_SPI0_MOSI_PIN_FUNCTION },
++  { BOARD_SPI0_CS_PIN, BOARD_SPI0_CS_PIN_FUNCTION },
+   
+   // SPI1
+ #if NUM_SPI > 4  
+   { BOARD_SPI1_SCK_PIN, BOARD_SPI1_SCK_PIN_FUNCTION },
+   { BOARD_SPI1_MISO_PIN, BOARD_SPI1_MISO_PIN_FUNCTION },
+   { BOARD_SPI1_MOSI_PIN, BOARD_SPI1_MOSI_PIN_FUNCTION },
++  { BOARD_SPI1_CS_PIN, BOARD_SPI1_CS_PIN_FUNCTION },
+ #endif  
+ };
+ 
+@@ -605,8 +607,8 @@
+     opt.mode = ((cpol & 1) << 1) | (cpha & 1);
+ 
+     // Set actual interface
+-    gpio_enable_module(spi_pins + (id >> 2) * 3, 3);
+-    spi_setupChipReg((volatile avr32_spi_t *) spireg[id >> 2], id % 4, &opt, REQ_PBA_FREQ);
++    gpio_enable_module(spi_pins + (id >> 2) * 4, 4);
++    spi_setupChipReg((volatile avr32_spi_t *) spireg[id >> 2], id % 4, &opt, REQ_CPU_FREQ);
+     
+     // TODO: return the actual baudrate.
+     return clock;
+@@ -626,9 +628,14 @@
+ 
+ void platform_spi_select( unsigned id, int is_select )
+ {
+-    // Unsupported.
+-}
++  volatile avr32_spi_t * spi = (volatile avr32_spi_t *) spireg[id >> 2];
+ 
++  if(is_select == PLATFORM_SPI_SELECT_ON)
++    spi_selectChip(spi, id % 4);
++  else
++    spi_unselectChip(spi, id % 4);
++
++}
+ // ****************************************************************************
+ // CPU functions
+ 
+Index: elua-svn/src/platform/avr32/spi.c
+===================================================================
+--- elua-svn.orig/src/platform/avr32/spi.c	2010-12-14 19:43:35.517245000 +0100
++++ elua-svn/src/platform/avr32/spi.c	2010-12-14 19:43:40.397245000 +0100
+@@ -193,23 +193,32 @@
+ 
+   return 0;
+ }
++//! Time-out value (number of attempts).
++#define SPI_TIMEOUT       10000
+ /*-----------------------------------------------------------*/
+ U16 spi_single_transfer(volatile avr32_spi_t *spi, U16 txdata)
+ {
+   U16 ret;
++  unsigned int timeout = SPI_TIMEOUT;
+ 
+   /* Wait for any pending TX */
+-  while (!(spi->sr & AVR32_SPI_SR_TDRE_MASK))
+-	  continue;
+-
++  while (!(spi->sr & AVR32_SPI_SR_TDRE_MASK)) {
++    if (!timeout--) {
++      return 0XFF;
++    }
++  }
+   // Discard data in buffer if any
+   ret = (spi->rdr >> AVR32_SPI_RDR_RD_OFFSET);
+ 
+   spi->tdr = txdata << AVR32_SPI_TDR_TD_OFFSET;
+ 
+   while ((spi->sr & (AVR32_SPI_SR_RDRF_MASK | AVR32_SPI_SR_TXEMPTY_MASK)) !=
+-           (AVR32_SPI_SR_RDRF_MASK | AVR32_SPI_SR_TXEMPTY_MASK))
+-	  continue;
++         (AVR32_SPI_SR_RDRF_MASK | AVR32_SPI_SR_TXEMPTY_MASK)) {
++    if (!timeout--) {
++      return 0xFF;
++    }
++  }
++
+ 
+   ret = (spi->rdr >> AVR32_SPI_RDR_RD_OFFSET);
+ 
+Index: elua-svn/src/platform/avr32/EVK1101/evk1101_conf.h
+===================================================================
+--- elua-svn.orig/src/platform/avr32/EVK1101/evk1101_conf.h	2010-12-14 19:43:35.437245000 +0100
++++ elua-svn/src/platform/avr32/EVK1101/evk1101_conf.h	2010-12-14 19:43:40.401245000 +0100
+@@ -6,6 +6,7 @@
+ // *****************************************************************************
+ // Define here what components you want for this platform
+ 
++//#define BUILD_MMCFS
+ #define BUILD_XMODEM
+ #define BUILD_SHELL
+ #define BUILD_ROMFS
+@@ -31,6 +32,8 @@
+ #define BOARD_SPI0_MISO_PIN_FUNCTION        0
+ #define BOARD_SPI0_MOSI_PIN                 AVR32_PIN_PA14
+ #define BOARD_SPI0_MOSI_PIN_FUNCTION        0
++#define BOARD_SPI0_CS_PIN                   AVR32_PIN_PA10
++#define BOARD_SPI0_CS_PIN_FUNCTION          0
+ 
+ // *****************************************************************************
+ // Auxiliary libraries that will be compiled for this platform
+@@ -89,6 +92,11 @@
+ // REMEMBER to change next line if buffering is enabled and CON_UART_ID is not 0!
+ #define CON_UART_IRQ          AVR32_USART1_IRQ
+ 
++// SD/MMC Filesystem Setup
++#define MMCFS_TICK_HZ     10
++#define MMCFS_TICK_MS     ( 1000 / MMCFS_TICK_HZ )
++#define MMCFS_SPI_NUM     1
++
+ // CPU frequency (needed by the CPU module, 0 if not used)
+ #define CPU_FREQUENCY         REQ_CPU_FREQ
+ 

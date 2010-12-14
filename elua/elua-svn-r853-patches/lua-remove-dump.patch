@@ -1,0 +1,143 @@
+Index: elua-svn/src/lua/lapi.c
+===================================================================
+--- elua-svn.orig/src/lua/lapi.c	2010-12-02 11:27:42.365727000 +0100
++++ elua-svn/src/lua/lapi.c	2010-12-02 11:27:48.021727000 +0100
+@@ -915,6 +915,7 @@
+ }
+ 
+ 
++#ifdef LUA_DUMP
+ LUA_API int lua_dump (lua_State *L, lua_Writer writer, void *data) {
+   int status;
+   TValue *o;
+@@ -928,6 +929,7 @@
+   lua_unlock(L);
+   return status;
+ }
++#endif
+ 
+ 
+ LUA_API int  lua_status (lua_State *L) {
+Index: elua-svn/src/lua/ldo.c
+===================================================================
+--- elua-svn.orig/src/lua/ldo.c	2010-12-02 11:27:42.345727000 +0100
++++ elua-svn/src/lua/ldo.c	2010-12-02 11:27:48.025727000 +0100
+@@ -528,8 +528,12 @@
+   int c = luaZ_lookahead(p->z);
+   luaC_checkGC(L);
+   set_block_gc(L);  /* stop collector during parsing */
++#ifdef LUA_DUMP
+   tf = ((c == LUA_SIGNATURE[0]) ? luaU_undump : luaY_parser)(L, p->z,
+                                                              &p->buff, p->name);
++#else
++  tf = luaY_parser(L, p->z, &p->buff, p->name);
++#endif
+   cl = luaF_newLclosure(L, tf->nups, hvalue(gt(L)));
+   cl->l.p = tf;
+   for (i = 0; i < tf->nups; i++)  /* initialize eventual upvalues */
+Index: elua-svn/src/lua/ldump.c
+===================================================================
+--- elua-svn.orig/src/lua/ldump.c	2010-12-02 11:27:42.409727000 +0100
++++ elua-svn/src/lua/ldump.c	2010-12-02 11:27:48.025727000 +0100
+@@ -13,6 +13,8 @@
+ 
+ #include "lua.h"
+ 
++#ifdef LUA_DUMP
++
+ #include "lobject.h"
+ #include "lstate.h"
+ #include "lundump.h"
+@@ -308,3 +310,5 @@
+  target.is_arm_fpa=0;
+  return luaU_dump_crosscompile(L,f,w,data,strip,target);
+ }
++
++#endif
+Index: elua-svn/src/lua/lstrlib.c
+===================================================================
+--- elua-svn.orig/src/lua/lstrlib.c	2010-12-02 11:27:42.437727000 +0100
++++ elua-svn/src/lua/lstrlib.c	2010-12-02 11:27:48.025727000 +0100
+@@ -137,6 +137,7 @@
+ }
+ 
+ 
++#ifdef LUA_DUMP
+ static int writer (lua_State *L, const void* b, size_t size, void* B) {
+   (void)L;
+   luaL_addlstring((luaL_Buffer*) B, (const char *)b, size);
+@@ -154,6 +155,7 @@
+   luaL_pushresult(&b);
+   return 1;
+ }
++#endif
+ 
+ 
+ 
+@@ -830,7 +832,9 @@
+ const LUA_REG_TYPE strlib[] = {
+   {LSTRKEY("byte"), LFUNCVAL(str_byte)},
+   {LSTRKEY("char"), LFUNCVAL(str_char)},
++#ifdef LUA_DUMP
+   {LSTRKEY("dump"), LFUNCVAL(str_dump)},
++#endif
+   {LSTRKEY("find"), LFUNCVAL(str_find)},
+   {LSTRKEY("format"), LFUNCVAL(str_format)},
+ #if LUA_OPTIMIZE_MEMORY > 0 && defined(LUA_COMPAT_GFIND)
+Index: elua-svn/src/lua/luaconf.h
+===================================================================
+--- elua-svn.orig/src/lua/luaconf.h	2010-12-02 11:27:42.385727000 +0100
++++ elua-svn/src/lua/luaconf.h	2010-12-02 11:27:48.029727000 +0100
+@@ -397,6 +397,14 @@
+ 
+ 
+ /*
++@@ LUA_DUMP enables the dump/undump mechanisms which
++@* write/read compiled Lua code to/from files.
++** Undump includes the loading of precompiled modules.
++** CHANGE it to undefined if you don't want that
++*/
++#undef LUA_DUMP
++
++/*
+ @@ LUA_HOOKS enables the debug hook interface
+ ** CHANGE it to undefined if you don't want that
+ */
+Index: elua-svn/src/lua/lundump.c
+===================================================================
+--- elua-svn.orig/src/lua/lundump.c	2010-12-02 11:27:42.301727000 +0100
++++ elua-svn/src/lua/lundump.c	2010-12-02 11:27:48.029727000 +0100
+@@ -20,6 +20,8 @@
+ #include "lundump.h"
+ #include "lzio.h"
+ 
++#ifdef LUA_DUMP
++
+ typedef struct {
+  lua_State* L;
+  ZIO* Z;
+@@ -305,3 +307,5 @@
+  *h++=(char)sizeof(lua_Number);
+  *h++=(char)(((lua_Number)0.5)==0);		/* is lua_Number integral? */
+ }
++
++#endif
+Index: elua-svn/src/lua/lundump.h
+===================================================================
+--- elua-svn.orig/src/lua/lundump.h	2010-12-02 11:27:42.321727000 +0100
++++ elua-svn/src/lua/lundump.h	2010-12-02 11:27:48.029727000 +0100
+@@ -4,6 +4,8 @@
+ ** See Copyright Notice in lua.h
+ */
+ 
++#ifdef LUA_DUMP
++
+ #ifndef lundump_h
+ #define lundump_h
+ 
+@@ -58,3 +60,5 @@
+ #define LUA_ERR_CC_NOTINTEGER 102
+ 
+ #endif
++
++#endif

@@ -1,0 +1,18 @@
+Mizar32 uses CS0 as chipselect for the SD card, not CS1.
+This setting was ingerited from the EVK1100 board, which uses CS1.
+
+Index: elua-svn/src/platform/avr32/MIZAR32/mizar32.h
+===================================================================
+--- elua-svn.orig/src/platform/avr32/MIZAR32/mizar32.h	2010-12-02 11:00:33.301727000 +0100
++++ elua-svn/src/platform/avr32/MIZAR32/mizar32.h	2010-12-02 11:02:03.585727000 +0100
+@@ -109,8 +109,8 @@
+ #define SD_MMC_SPI_MISO_FUNCTION    AVR32_SPI1_MISO_0_0_FUNCTION
+ #define SD_MMC_SPI_MOSI_PIN         AVR32_SPI1_MOSI_0_0_PIN
+ #define SD_MMC_SPI_MOSI_FUNCTION    AVR32_SPI1_MOSI_0_0_FUNCTION
+-#define SD_MMC_SPI_NPCS_PIN         AVR32_SPI1_NPCS_1_0_PIN
+-#define SD_MMC_SPI_NPCS_FUNCTION    AVR32_SPI1_NPCS_1_0_FUNCTION
++#define SD_MMC_SPI_NPCS_PIN         AVR32_SPI1_NPCS_0_0_PIN
++#define SD_MMC_SPI_NPCS_FUNCTION    AVR32_SPI1_NPCS_0_0_FUNCTION
+ //! @}
+ 
+ #endif  // _MIZAR32_H_

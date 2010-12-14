@@ -1,0 +1,13 @@
+Index: elua-svn/src/lua/linit.c
+===================================================================
+--- elua-svn.orig/src/lua/linit.c	2010-12-02 11:28:09.345727001 +0100
++++ elua-svn/src/lua/linit.c	2010-12-02 11:28:31.209727000 +0100
+@@ -26,7 +26,7 @@
+ #if LUA_OPTIMIZE_MEMORY == 0
+   {LUA_MATHLIBNAME, luaopen_math},
+   {LUA_TABLIBNAME, luaopen_table},  
+-  {LUA_DBLIBNAME, luaopen_debug},  
++  //{LUA_DBLIBNAME, luaopen_debug},
+ #endif
+ #ifdef LUA_PLATFORM_LIBS_REG
+   LUA_PLATFORM_LIBS_REG,
