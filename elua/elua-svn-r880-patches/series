@@ -1,0 +1,13 @@
+elua-avr32-MMCFS-use-spi_select.patch
+elua-avr32-PX.patch
+mizar32-enable-MMCFS.patch
+elua-mizar32-fix-floating-serial-pin.patch
+elua-mizar32-enable-uart-buf.patch
+elua-no-shell-sanity.patch
+elua-fix-stdin-crlf.patch
+elua-code-size-hacks.patch
+elua-disable-compat-flags.patch
+elua-remove-debug.patch
+mizar32-add-working-modules.patch
+lua-remove-hooks.patch
+lua-remove-dump.patch

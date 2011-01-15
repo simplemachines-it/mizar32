@@ -1,0 +1,26 @@
+On Mizar32 platform, the serial board is an optional add-on. If it is not
+present and UART buffering is enabled, the RX pin oscillates with the
+surrounding electric noise, causing an interrupt storm and crashing the
+interpreter.
+
+This patch avoids the condition by enabling the internal pull-up resistor
+on UART0's RX pin (PA0), allowing you to enable BUF_ENABLE_UART on Mizar32.
+
+Index: elua-svn/src/platform/avr32/platform.c
+===================================================================
+--- elua-svn.orig/src/platform/avr32/platform.c	2010-12-17 14:35:18.463835001 +0100
++++ elua-svn/src/platform/avr32/platform.c	2010-12-17 14:35:51.247834998 +0100
+@@ -128,6 +128,13 @@
+   // Setup UART for eLua
+   platform_uart_setup( CON_UART_ID, CON_UART_SPEED, 8, PLATFORM_UART_PARITY_NONE, PLATFORM_UART_STOPBITS_1 );  
+ #if defined( BUF_ENABLE_UART ) && defined( CON_BUF_SIZE )
++  // On Mizar32 when there is no serial board plugged in, we get infinite
++  // interrupts due to the RX pin oscillating with ambient noise.
++  // To avoid this, enable the pullup resistor on UART0 RX pin PA0.
++#if BOARD == MIZAR32
++  platform_pio_op((unsigned) 0, (pio_type) (1<<0), PLATFORM_IO_PIN_PULLUP);
++#endif
++
+   // Enable buffering on the console UART
+   buf_set( BUF_ID_UART, CON_UART_ID, CON_BUF_SIZE, BUF_DSIZE_U8 );
+   // Set interrupt handler and interrupt flag on UART

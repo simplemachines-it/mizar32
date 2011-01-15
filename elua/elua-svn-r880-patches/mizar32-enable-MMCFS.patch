@@ -1,0 +1,13 @@
+Index: elua-svn/src/platform/avr32/MIZAR32/mizar32_conf.h
+===================================================================
+--- elua-svn.orig/src/platform/avr32/MIZAR32/mizar32_conf.h	2011-01-15 22:54:41.702154004 +0100
++++ elua-svn/src/platform/avr32/MIZAR32/mizar32_conf.h	2011-01-15 22:54:50.658154003 +0100
+@@ -12,7 +12,7 @@
+ // *****************************************************************************
+ // Define here what components you want for this platform
+ 
+-//#define BUILD_MMCFS
++#define BUILD_MMCFS
+ //#define BUILD_XMODEM
+ //#define BUILD_SHELL
+ //#define BUILD_ROMFS

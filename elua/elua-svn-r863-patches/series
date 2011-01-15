@@ -1,3 +1,4 @@
+elua-avr32-fix-mmcfs.patch
 elua-code-size-hacks.patch
 elua-disable-compat-flags.patch
 elua-remove-debug.patch
@@ -6,6 +7,5 @@ elua-no-shell-sanity.patch
 mizar32-add-working-modules.patch
 lua-remove-hooks.patch
 lua-remove-dump.patch
-mizar32-fix-sdcard-chipselect.patch
-elua-avr32-fix-mmcfs.patch
 elua-mizar32-fix-floating-serial-pin.patch
+elua-mizar32-enable-uart-buf.patch
