@@ -1,0 +1,26 @@
+Index: elua-svn/src/platform/at91sam7x/platform.c
+===================================================================
+--- elua-svn.orig/src/platform/at91sam7x/platform.c	2011-03-14 04:35:50.177489002 +0100
++++ elua-svn/src/platform/at91sam7x/platform.c	2011-03-14 04:36:54.245489001 +0100
+@@ -146,7 +146,7 @@
+             
+     case PLATFORM_IO_PORT_GET_VALUE:
+       pin->mask = 0x7FFFFFFF;
+-      pin->type = pinmask == PLATFORM_IO_READ_IN_MASK ? PIO_INPUT : PIO_OUTPUT_0;
++      pin->type = PIO_INPUT;
+       retval = PIO_Get( pin );
+       break;
+       
+Index: elua-svn/src/platform/avr32/platform.c
+===================================================================
+--- elua-svn.orig/src/platform/avr32/platform.c	2011-03-14 04:31:47.953489001 +0100
++++ elua-svn/src/platform/avr32/platform.c	2011-03-14 04:33:27.969489002 +0100
+@@ -265,7 +265,7 @@
+       break;      
+             
+     case PLATFORM_IO_PORT_GET_VALUE:
+-      retval = platform_pio_get_port_reg( port, pinmask == PLATFORM_IO_READ_IN_MASK ? PIO_REG_PVR : PIO_REG_OVR );
++      retval = platform_pio_get_port_reg( port, PIO_REG_PVR );
+       break;
+       
+     case PLATFORM_IO_PIN_GET:

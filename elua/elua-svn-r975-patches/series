@@ -1,1 +1,2 @@
 elua-emblod-support.patch
+avr32-at91-fix-port_getval.patch
