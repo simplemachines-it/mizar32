@@ -1,0 +1,9 @@
+elua-emblod-support.patch
+lua-integral-mathlib.patch
+avr32-at91-fix-port_getval.patch
+elua-fix-stdin-crlf.patch
+elua-code-size-hacks.patch
+elua-drop-opendir.patch
+elua-disable-compat-flags.patch
+elua-remove-debug.patch
+mizar32-add-working-modules.patch
