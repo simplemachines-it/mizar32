@@ -1,0 +1,26 @@
+Index: elua/src/platform/avr32/platform.c
+===================================================================
+--- elua.orig/src/platform/avr32/platform.c	2011-06-03 18:33:39.219692600 +0200
++++ elua/src/platform/avr32/platform.c	2011-06-03 18:33:55.035674989 +0200
+@@ -390,6 +390,13 @@
+   opts.baudrate = baud;
+ 
+   // Set stopbits
++#if PLATFORM_UART_STOPBITS_1 == USART_1_STOPBIT && \
++    PLATFORM_UART_STOPBITS_1_5 == USART_1_5_STOPBIT && \
++    PLATFORM_UART_STOPBITS_2 == USART_2_STOPBIT
++  // The AVR32 header values and the eLua values are the same (0, 1, 2)
++  if (stopbits > PLATFORM_UART_STOPBITS_2) return 0;
++  opts.stopbits = stopbits;
++#else
+   switch (stopbits) {
+   case PLATFORM_UART_STOPBITS_1:
+     opts.stopbits = USART_1_STOPBIT;
+@@ -403,6 +410,7 @@
+   default:
+     return 0;
+   }
++#endif
+ 
+   // Set parity
+   switch (parity) {

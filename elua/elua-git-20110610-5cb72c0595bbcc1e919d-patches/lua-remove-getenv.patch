@@ -1,0 +1,84 @@
+This removes all calls to getenv(), since embedded systems don't have
+environment variables as far as I know.
+The saving in code size is about 512 bytes.
+
+Index: elua/src/lua/loadlib.c
+===================================================================
+--- elua.orig/src/lua/loadlib.c	2011-04-12 16:36:23.573086481 +0200
++++ elua/src/lua/loadlib.c	2011-04-12 16:36:55.217086482 +0200
+@@ -599,6 +599,7 @@
+ 
+ static void setpath (lua_State *L, const char *fieldname, const char *envname,
+                                    const char *def) {
++#ifndef NO_GETENV
+   const char *path = getenv(envname);
+   if (path == NULL)  /* no environment variable? */
+     lua_pushstring(L, def);  /* use default */
+@@ -609,10 +610,19 @@
+     luaL_gsub(L, path, AUXMARK, def);
+     lua_remove(L, -2);
+   }
++#else
++  lua_pushstring(L, def);  /* use default */
++#endif
+   setprogdir(L);
+   lua_setfield(L, -2, fieldname);
+ }
+ 
++#ifndef NO_GETENV
++#undef LUA_PATH
++#undef LUA_CPATH
++#define LUA_PATH NULL
++#define LUA_CPATH NULL
++#endif
+ 
+ static const luaL_Reg pk_funcs[] = {
+   {"loadlib", ll_loadlib},
+Index: elua/src/lua/lua.c
+===================================================================
+--- elua.orig/src/lua/lua.c	2011-04-12 16:36:48.709086482 +0200
++++ elua/src/lua/lua.c	2011-04-12 16:36:55.217086482 +0200
+@@ -328,6 +328,7 @@
+ }
+ 
+ 
++#ifndef NO_GETENV
+ static int handle_luainit (lua_State *L) {
+   const char *init = getenv(LUA_INIT);
+   if (init == NULL) return 0;  /* status OK */
+@@ -336,6 +337,7 @@
+   else
+     return dostring(L, init, "=" LUA_INIT);
+ }
++#endif
+ 
+ 
+ struct Smain {
+@@ -355,8 +357,10 @@
+   lua_gc(L, LUA_GCSTOP, 0);  /* stop collector during initialization */
+   luaL_openlibs(L);  /* open libraries */
+   lua_gc(L, LUA_GCRESTART, 0);
++#ifndef NO_GETENV
+   s->status = handle_luainit(L);
+   if (s->status != 0) return 0;
++#endif
+   script = collectargs(argv, &has_i, &has_v, &has_e);
+   if (script < 0) {  /* invalid args? */
+     print_usage();
+Index: elua/src/lua/luaconf.h
+===================================================================
+--- elua.orig/src/lua/luaconf.h	2011-04-12 16:36:48.709086482 +0200
++++ elua/src/lua/luaconf.h	2011-04-12 16:36:55.217086482 +0200
+@@ -30,6 +30,12 @@
+ */
+ #define NO_HOOKS
+ 
++/*
++@@ NO_GETENV removes all calls to getenv() since embedded platforms don't
++** have an environment to query.
++*/
++#define NO_GETENV
++
+ 
+ /*
+ @@ LUA_ANSI controls the use of non-ansi features.

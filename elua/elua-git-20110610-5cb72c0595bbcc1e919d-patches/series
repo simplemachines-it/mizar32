@@ -1,0 +1,13 @@
+avr32-optimize-stopbits.patch
+elua-remove-buffer-overflow-message.patch
+elua-fix-stdin-crlf.patch
+elua-remove-ctrlz.patch
+elua-code-size-hacks.patch
+lua-remove-opendir.patch
+elua-disable-compat-flags.patch
+elua-remove-debug.patch
+lua-remove-hooks.patch
+lua-remove-getenv.patch
+lua-remove-signal.patch
+lua-remove-dump.patch
+mizar32-add-working-modules.patch

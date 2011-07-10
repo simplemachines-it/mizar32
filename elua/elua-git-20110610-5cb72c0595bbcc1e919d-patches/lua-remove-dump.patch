@@ -1,0 +1,195 @@
+Index: elua/src/lua/lapi.c
+===================================================================
+--- elua.orig/src/lua/lapi.c	2011-06-03 19:06:16.754074015 +0200
++++ elua/src/lua/lapi.c	2011-06-25 04:40:23.808035679 +0200
+@@ -915,6 +915,7 @@
+ }
+ 
+ 
++#ifndef NO_DUMP
+ LUA_API int lua_dump (lua_State *L, lua_Writer writer, void *data) {
+   int status;
+   TValue *o;
+@@ -928,6 +929,7 @@
+   lua_unlock(L);
+   return status;
+ }
++#endif
+ 
+ 
+ LUA_API int  lua_status (lua_State *L) {
+Index: elua/src/lua/ldo.c
+===================================================================
+--- elua.orig/src/lua/ldo.c	2011-06-25 04:40:23.756035421 +0200
++++ elua/src/lua/ldo.c	2011-06-25 04:40:23.808035679 +0200
+@@ -525,11 +525,17 @@
+   Proto *tf;
+   Closure *cl;
+   struct SParser *p = cast(struct SParser *, ud);
++#ifndef NO_UNDUMP
+   int c = luaZ_lookahead(p->z);
++#endif
+   luaC_checkGC(L);
+   set_block_gc(L);  /* stop collector during parsing */
++#ifndef NO_UNDUMP
+   tf = ((c == LUA_SIGNATURE[0]) ? luaU_undump : luaY_parser)(L, p->z,
+                                                              &p->buff, p->name);
++#else
++  tf = luaY_parser(L, p->z, &p->buff, p->name);
++#endif
+   cl = luaF_newLclosure(L, tf->nups, hvalue(gt(L)));
+   cl->l.p = tf;
+   for (i = 0; i < tf->nups; i++)  /* initialize eventual upvalues */
+Index: elua/src/lua/ldump.c
+===================================================================
+--- elua.orig/src/lua/ldump.c	2011-06-24 13:56:09.754078683 +0200
++++ elua/src/lua/ldump.c	2011-06-25 04:40:23.808035679 +0200
+@@ -13,6 +13,10 @@
+ 
+ #include "lua.h"
+ 
++
++#ifndef NO_DUMP
++
++
+ #include "lobject.h"
+ #include "lstate.h"
+ #include "lundump.h"
+@@ -308,3 +312,6 @@
+  target.is_arm_fpa=0;
+  return luaU_dump_crosscompile(L,f,w,data,strip,target);
+ }
++
++
++#endif  // NO_DUMP
+Index: elua/src/lua/lstrlib.c
+===================================================================
+--- elua.orig/src/lua/lstrlib.c	2011-06-25 04:40:23.684035062 +0200
++++ elua/src/lua/lstrlib.c	2011-06-25 04:40:23.808035679 +0200
+@@ -137,6 +137,7 @@
+ }
+ 
+ 
++#ifndef NO_DUMP
+ static int writer (lua_State *L, const void* b, size_t size, void* B) {
+   (void)L;
+   luaL_addlstring((luaL_Buffer*) B, (const char *)b, size);
+@@ -154,6 +155,7 @@
+   luaL_pushresult(&b);
+   return 1;
+ }
++#endif  // NO_DUMP
+ 
+ 
+ 
+@@ -832,7 +834,9 @@
+ const LUA_REG_TYPE strlib[] = {
+   {LSTRKEY("byte"), LFUNCVAL(str_byte)},
+   {LSTRKEY("char"), LFUNCVAL(str_char)},
++#ifndef NO_DUMP
+   {LSTRKEY("dump"), LFUNCVAL(str_dump)},
++#endif
+   {LSTRKEY("find"), LFUNCVAL(str_find)},
+   {LSTRKEY("format"), LFUNCVAL(str_format)},
+ #if LUA_OPTIMIZE_MEMORY > 0 && defined(LUA_COMPAT_GFIND)
+Index: elua/src/lua/lundump.c
+===================================================================
+--- elua.orig/src/lua/lundump.c	2011-06-03 19:06:16.766074070 +0200
++++ elua/src/lua/lundump.c	2011-06-25 04:40:23.808035679 +0200
+@@ -20,6 +20,10 @@
+ #include "lundump.h"
+ #include "lzio.h"
+ 
++
++#ifndef NO_UNDUMP
++
++
+ typedef struct {
+  lua_State* L;
+  ZIO* Z;
+@@ -305,3 +309,6 @@
+  *h++=(char)sizeof(lua_Number);
+  *h++=(char)(((lua_Number)0.5)==0);		/* is lua_Number integral? */
+ }
++
++
++#endif  // NO_UNDUMP
+Index: elua/src/lua/lundump.h
+===================================================================
+--- elua.orig/src/lua/lundump.h	2011-06-03 19:06:16.838074425 +0200
++++ elua/src/lua/lundump.h	2011-06-25 04:40:23.808035679 +0200
+@@ -12,6 +12,7 @@
+ #include "lobject.h"
+ #include "lzio.h"
+ 
++
+ typedef uint32_t strsize_t;
+ 
+ /* info about target machine for cross-compilation */
+@@ -24,11 +25,15 @@
+  int is_arm_fpa;
+ } DumpTargetInfo;
+ 
++#ifndef NO_UNDUMP
+ /* load one chunk; from lundump.c */
+ LUAI_FUNC Proto* luaU_undump (lua_State* L, ZIO* Z, Mbuffer* buff, const char* name);
+ 
+ /* make header; from lundump.c */
+ LUAI_FUNC void luaU_header (char* h);
++#endif
++
++#ifndef NO_DUMP
+ 
+ /* dump one chunk to a different target; from ldump.c */
+ int luaU_dump_crosscompile (lua_State* L, const Proto* f, lua_Writer w, void* data, int strip, DumpTargetInfo target);
+@@ -41,6 +46,8 @@
+ LUAI_FUNC void luaU_print (const Proto* f, int full);
+ #endif
+ 
++#endif // NO_DUMP
++
+ /* for header of binary files -- this is Lua 5.1 */
+ #define LUAC_VERSION		0x51
+ 
+Index: elua/src/lua/luaconf.h
+===================================================================
+--- elua.orig/src/lua/luaconf.h	2011-06-25 04:40:23.792035600 +0200
++++ elua/src/lua/luaconf.h	2011-06-25 04:40:23.812035704 +0200
+@@ -36,6 +36,17 @@
+ */
+ #define NO_GETENV
+ 
++/*
++@@ Defining NO_DUMP removes the dump mechanism, but it is always needed when
++** compiling the corss-compiler
++@@ Defining NO_UNDUMP removes the undump nechanism, which is needed to be able
++** to load compiled bytecode from *.lc files.
++*/
++#ifndef LUA_CROSS_COMPILER
++# define NO_DUMP
++#endif
++#define NO_UNDUMP
++
+ 
+ /*
+ @@ NO_SIGNAL removes all calls to signal() since embedded platforms don't
+Index: elua/src/main.c
+===================================================================
+--- elua.orig/src/main.c	2011-06-03 19:06:16.738073936 +0200
++++ elua/src/main.c	2011-06-25 04:40:23.812035704 +0200
+@@ -30,11 +30,15 @@
+ char *boot_order[] = {
+ #if defined(BUILD_MMCFS)
+   "/mmc/autorun.lua",
++# ifndef NO_UNDUMP
+   "/mmc/autorun.lc",
++# endif
+ #endif
+ #if defined(BUILD_ROMFS)
+   "/rom/autorun.lua",
++# ifndef NO_UNDUMP
+   "/rom/autorun.lc",
++# endif
+ #endif
+ };
+ 
