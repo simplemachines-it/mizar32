@@ -47,11 +47,18 @@ static int32_t execute_erase( dfu_device_t *device,
 
     result = atmel_erase_flash( device, ATMEL_ERASE_ALL );
     if( 0 != result ) {
+        fprintf( stderr, "Error while erasing.\n" );
         return result;
     }
 
-    return atmel_blank_check( device, args->flash_address_bottom,
-                              args->flash_address_top );
+    result = atmel_blank_check( device, args->flash_address_bottom,
+                                args->flash_address_top );
+    if( 0 != result ) {
+        fprintf( stderr, "Error while checking the flash was erased.\n" );
+    }
+
+    return result;
+  
 }
 
 
