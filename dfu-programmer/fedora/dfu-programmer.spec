@@ -1,5 +1,5 @@
 Name:           dfu-programmer
-Version:        0.5.4
+Version:        0.5.4.1
 Release:        1%{?dist}
 Summary:        A Device Firmware Update based USB programmer for Atmel chips
 
