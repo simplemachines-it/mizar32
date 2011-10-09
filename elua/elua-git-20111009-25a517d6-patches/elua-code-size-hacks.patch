@@ -1,0 +1,347 @@
+Hacks to reduce code size, mostly by eliminating strings.
+Currently saves 4KB of code size.
+
+Index: elua/SConstruct
+===================================================================
+--- elua.orig/SConstruct	2011-07-23 18:33:08.838527886 +0200
++++ elua/SConstruct	2011-07-24 01:23:01.676477185 +0200
+@@ -371,6 +371,8 @@
+ 
+   # Optimizer flags (speed or size)
+   comp.Append(CCFLAGS = ['-Os','-fomit-frame-pointer'])
++  # Code size reduction flags
++  comp.Append(CCFLAGS = ['-DLUAC_TRUST_BINARIES'])
+   #opt += " -ffreestanding"
+   #opt += " -fconserve-stack" # conserve stack at potential speed cost, >=GCC4.4
+ 
+Index: elua/src/lua/lauxlib.c
+===================================================================
+--- elua.orig/src/lua/lauxlib.c	2011-07-23 18:33:08.950528433 +0200
++++ elua/src/lua/lauxlib.c	2011-07-24 01:23:01.676477185 +0200
+@@ -158,7 +158,7 @@
+ 
+ LUALIB_API void luaL_checkstack (lua_State *L, int space, const char *mes) {
+   if (!lua_checkstack(L, space))
+-    luaL_error(L, "stack overflow (%s)", mes);
++    luaL_error(L, "stack overflow");
+ }
+ 
+ 
+Index: elua/src/lua/lbaselib.c
+===================================================================
+--- elua.orig/src/lua/lbaselib.c	2011-07-23 18:33:08.970528532 +0200
++++ elua/src/lua/lbaselib.c	2011-07-24 01:23:01.676477185 +0200
+@@ -349,7 +349,7 @@
+   if (i > e) return 0;  /* empty range */
+   n = e - i + 1;  /* number of elements */
+   if (n <= 0 || !lua_checkstack(L, n))  /* n <= 0 means arith. overflow */
+-    return luaL_error(L, "too many results to unpack");
++    return luaL_error(L, "too many results");
+   lua_rawgeti(L, 1, i);  /* push arg[i] (avoiding overflow problems) */
+   while (i++ < e)  /* push arg[i + 1...e] */
+     lua_rawgeti(L, 1, i);
+@@ -558,7 +558,7 @@
+ static int auxresume (lua_State *L, lua_State *co, int narg) {
+   int status = costatus(L, co);
+   if (!lua_checkstack(co, narg))
+-    luaL_error(L, "too many arguments to resume");
++    luaL_error(L, "too many arguments");
+   if (status != CO_SUS) {
+     lua_pushfstring(L, "cannot resume %s coroutine", statnames[status]);
+     return -1;  /* error flag */
+@@ -569,7 +569,7 @@
+   if (status == 0 || status == LUA_YIELD) {
+     int nres = lua_gettop(co);
+     if (!lua_checkstack(L, nres + 1))
+-      luaL_error(L, "too many results to resume");
++      luaL_error(L, "too many results");
+     lua_xmove(co, L, nres);  /* move yielded values */
+     return nres;
+   }
+Index: elua/src/lua/ldo.c
+===================================================================
+--- elua.orig/src/lua/ldo.c	2011-07-23 18:33:08.934528362 +0200
++++ elua/src/lua/ldo.c	2011-07-24 01:23:01.676477185 +0200
+@@ -386,7 +386,7 @@
+ void luaD_call (lua_State *L, StkId func, int nResults) {
+   if (++L->nCcalls >= LUAI_MAXCCALLS) {
+     if (L->nCcalls == LUAI_MAXCCALLS)
+-      luaG_runerror(L, "C stack overflow");
++      luaG_runerror(L, "stack overflow");
+     else if (L->nCcalls >= (LUAI_MAXCCALLS + (LUAI_MAXCCALLS>>3)))
+       luaD_throw(L, LUA_ERRERR);  /* error while handing stack error */
+   }
+@@ -437,7 +437,7 @@
+   if (L->status != LUA_YIELD && (L->status != 0 || L->ci != L->base_ci))
+       return resume_error(L, "cannot resume non-suspended coroutine");
+   if (L->nCcalls >= LUAI_MAXCCALLS)
+-    return resume_error(L, "C stack overflow");
++    return resume_error(L, "stack overflow");
+   luai_userstateresume(L, nargs);
+   lua_assert(L->errfunc == 0);
+   L->baseCcalls = ++L->nCcalls;
+Index: elua/src/lua/loadlib.c
+===================================================================
+--- elua.orig/src/lua/loadlib.c	2011-07-23 18:33:08.894528170 +0200
++++ elua/src/lua/loadlib.c	2011-07-24 01:23:01.676477185 +0200
+@@ -436,7 +436,7 @@
+   const char *name = luaL_checkstring(L, 1);
+   lua_getfield(L, LUA_ENVIRONINDEX, "preload");
+   if (!lua_istable(L, -1))
+-    luaL_error(L, LUA_QL("package.preload") " must be a table");
++    luaL_error(L, "%s must be a table", LUA_QL("package.preload"));
+   lua_getfield(L, -1, name);
+   if (lua_isnil(L, -1))  /* not found? */
+     lua_pushfstring(L, "\n\tno field package.preload['%s']", name);
+@@ -468,7 +468,7 @@
+   /* else must load it; iterate over available loaders */
+   lua_getfield(L, LUA_ENVIRONINDEX, "loaders");
+   if (!lua_istable(L, -1))
+-    luaL_error(L, LUA_QL("package.loaders") " must be a table");
++    luaL_error(L, "%s must be a table", LUA_QL("package.loaders"));
+   lua_pushliteral(L, "");  /* error message accumulator */
+   for (i=1; ; i++) {
+     lua_rawgeti(L, -2, i);  /* get a loader */
+Index: elua/src/lua/lstrlib.c
+===================================================================
+--- elua.orig/src/lua/lstrlib.c	2011-07-23 18:33:08.922528301 +0200
++++ elua/src/lua/lstrlib.c	2011-07-24 01:23:01.676477185 +0200
+@@ -203,14 +203,14 @@
+   switch (*p++) {
+     case L_ESC: {
+       if (*p == '\0')
+-        luaL_error(ms->L, "malformed pattern (ends with " LUA_QL("%%") ")");
++        luaL_error(ms->L, "malformed pattern");
+       return p+1;
+     }
+     case '[': {
+       if (*p == '^') p++;
+       do {  /* look for a `]' */
+         if (*p == '\0')
+-          luaL_error(ms->L, "malformed pattern (missing " LUA_QL("]") ")");
++          luaL_error(ms->L, "malformed pattern");
+         if (*(p++) == L_ESC && *p != '\0')
+           p++;  /* skip escapes (e.g. `%]') */
+       } while (*p != ']');
+@@ -637,7 +637,7 @@
+     lua_pushlstring(L, s, e - s);  /* keep original text */
+   }
+   else if (!lua_isstring(L, -1))
+-    luaL_error(L, "invalid replacement value (a %s)", luaL_typename(L, -1)); 
++    luaL_error(L, "invalid value");
+   luaL_addvalue(b);  /* add result to accumulator */
+ }
+ 
+@@ -729,7 +729,7 @@
+   const char *p = strfrmt;
+   while (*p != '\0' && strchr(FLAGS, *p) != NULL) p++;  /* skip flags */
+   if ((size_t)(p - strfrmt) >= sizeof(FLAGS))
+-    luaL_error(L, "invalid format (repeated flags)");
++    luaL_error(L, "invalid format");
+   if (isdigit(uchar(*p))) p++;  /* skip width */
+   if (isdigit(uchar(*p))) p++;  /* (2 digits at most) */
+   if (*p == '.') {
+@@ -738,7 +738,7 @@
+     if (isdigit(uchar(*p))) p++;  /* (2 digits at most) */
+   }
+   if (isdigit(uchar(*p)))
+-    luaL_error(L, "invalid format (width or precision too long)");
++    luaL_error(L, "invalid format");
+   *(form++) = '%';
+   strncpy(form, strfrmt, p - strfrmt + 1);
+   form += p - strfrmt + 1;
+@@ -817,8 +817,7 @@
+           }
+         }
+         default: {  /* also treat cases `pnLlh' */
+-          return luaL_error(L, "invalid option " LUA_QL("%%%c") " to "
+-                               LUA_QL("format"), *(strfrmt - 1));
++          return luaL_error(L, "invalid option");
+         }
+       }
+       luaL_addlstring(&b, buff, strlen(buff));
+Index: elua/src/lua/ltablib.c
+===================================================================
+--- elua.orig/src/lua/ltablib.c	2011-07-23 18:33:08.878528076 +0200
++++ elua/src/lua/ltablib.c	2011-07-24 01:23:01.676477185 +0200
+@@ -136,8 +136,7 @@
+ static void addfield (lua_State *L, luaL_Buffer *b, int i) {
+   lua_rawgeti(L, 1, i);
+   if (!lua_isstring(L, -1))
+-    luaL_error(L, "invalid value (%s) at index %d in table for "
+-                  LUA_QL("concat"), luaL_typename(L, -1), i);
++    luaL_error(L, "invalid value");
+     luaL_addvalue(b);
+ }
+ 
+Index: elua/src/lua/lua.c
+===================================================================
+--- elua.orig/src/lua/lua.c	2011-07-23 18:33:08.906528226 +0200
++++ elua/src/lua/lua.c	2011-07-24 01:23:01.676477185 +0200
+@@ -40,18 +40,7 @@
+ 
+ 
+ static void print_usage (void) {
+-  fprintf(stderr,
+-  "usage: %s [options] [script [args]].\n"
+-  "Available options are:\n"
+-  "  -e stat  execute string " LUA_QL("stat") "\n"
+-  "  -l name  require library " LUA_QL("name") "\n"
+-  "  -m limit set memory limit. (units are in Kbytes)\n"
+-  "  -i       enter interactive mode after executing " LUA_QL("script") "\n"
+-  "  -v       show version information\n"
+-  "  --       stop handling options\n"
+-  "  -        execute stdin and stop handling options\n"
+-  ,
+-  progname);
++  fprintf(stderr, "usage: %s [options] [script [args]].\n", progname);
+   fflush(stderr);
+ }
+ 
+@@ -120,7 +109,7 @@
+   int argc = 0;
+   while (argv[argc]) argc++;  /* count total number of arguments */
+   narg = argc - (n + 1);  /* number of arguments to the script */
+-  luaL_checkstack(L, narg + 3, "too many arguments to script");
++  luaL_checkstack(L, narg + 3, "too many arguments");
+   for (i=n+1; i < argc; i++)
+     lua_pushstring(L, argv[i]);
+   lua_createtable(L, narg, n + 1);
+Index: elua/src/shell.c
+===================================================================
+--- elua.orig/src/shell.c	2011-07-23 18:33:08.850527944 +0200
++++ elua/src/shell.c	2011-07-24 01:23:01.676477185 +0200
+@@ -53,11 +53,13 @@
+   printf( "Shell commands:\n" );
+   printf( "  exit        - exit from this shell\n" );
+   printf( "  help        - print this help\n" );
+-  printf( "  ls or dir   - lists filesystems files and sizes\n" );
+-  printf( "  cat or type - lists file contents\n" );
++  printf( "  ls          - lists filesystems files and sizes\n" );
++  printf( "  cat         - lists file contents\n" );
+   printf( "  lua [args]  - run Lua with the given arguments\n" );
++#ifdef BUILD_XMODEM
+   printf( "  recv [path] - receive a file via XMODEM, if there is a path, save"
+           "                there, otherwise run it.");
++#endif
+   printf( "  cp <src> <dst> - copy source file 'src' to 'dst'\n" );
+   printf( "  ver         - print eLua version\n" );
+ }
+@@ -108,16 +110,12 @@
+   clearerr( stdin );
+ }
+ 
++#ifdef BUILD_XMODEM
+ // 'recv' handler
+ static void shell_recv( char* args )
+ {
+   args = args;
+ 
+-#ifndef BUILD_XMODEM
+-  printf( "XMODEM support not compiled, unable to recv\n" );
+-  return;
+-#else // #ifndef BUILD_XMODEM
+-
+   char *p;
+   long actsize;
+   lua_State* L;
+@@ -182,8 +180,8 @@
+   }
+   free( shell_prog );
+   shell_prog = NULL;
+-#endif // #ifndef BUILD_XMODEM
+ }
++#endif // #ifdef BUILD_XMODEM
+ 
+ // 'ver' handler
+ static void shell_ver( char* args )
+@@ -193,7 +191,7 @@
+   printf( "For more information visit www.eluaproject.net and wiki.eluaproject.net\n" );
+ }
+ 
+-// 'ls' and 'dir' handler
++// 'ls' handler
+ static void shell_ls( char* args )
+ {
+   const DM_DEVICE *pdev;
+@@ -228,7 +226,7 @@
+   printf( "\n" );
+ }
+ 
+-// 'cat' and 'type' handler
++// 'cat' handler
+ static void shell_cat( char *args )
+ {
+   FILE *fp;
+@@ -257,7 +255,7 @@
+       args = p + 1;
+     }      
+   else
+-      printf( "Usage: cat (or type) <filename1> [<filename2> ...]\n" );
++      printf( "Usage: cat <filename1> [<filename2> ...]\n" );
+ }    
+ 
+ // 'copy' handler
+@@ -330,13 +328,13 @@
+ {
+   { "help", shell_help },
+   { "lua", shell_lua },
++#ifdef BUILD_XMODEM
+   { "recv", shell_recv },
++#endif
+   { "ver", shell_ver },
+   { "exit", NULL },
+   { "ls", shell_ls },
+-  { "dir", shell_ls },
+   { "cat", shell_cat },
+-  { "type", shell_cat },
+   { "cp", shell_cp },
+   { NULL, NULL }
+ };
+Index: elua/src/common.c
+===================================================================
+--- elua.orig/src/common.c	2011-07-23 19:53:47.650522255 +0200
++++ elua/src/common.c	2011-07-24 01:23:01.676477185 +0200
+@@ -445,3 +445,42 @@
+   return r;
+ }
+ 
++#include <errno.h>
++
++// Save 3Kb of space in the binary by not loading the whole errno string table
++// from the C library.
++//
++// For the values we decode, consider that strerror is used after calls to:
++//   os.execute, fopen, read, write, close, popen, pclose,
++//   fopen, freopen, fread, fwrite, fclose, fgets, fseek, fflush, tmpfile
++// If LUA_RPC, "transport errors" can occur too.
++//
++// The commented errors below are ones that eLua never generates unless
++// newlib does so in its internals. You might like to see if you can
++// provoke it into doing so and include them if so.
++
++char *strerror(int e)
++{
++  static char buf[10];
++
++  switch (e) {
++  //case EACCES:       return "Permission denied";
++  case EBADF:        return "Bad file number";		//newlib
++  //case EEXIST:       return "File exists";
++  //case EFBIG:        return "File too large";
++  case EIO:          return "I/O error";		//MMCFS
++  case EINVAL:       return "Invalid argument";		//MMCFS,ROMFS
++  //case EISDIR:       return "Is a directory";
++  case EMFILE:
++  case ENFILE:       return "Too many open files";   //MMCFS,ROMFS
++  //case ENAMETOOLONG: return "File name too long";
++  case ENODEV:       return "No such device";		// newlib
++  case ENOENT:       return "No such file or directory"; //MMCFS,ROMFS
++  case ENOMEM:       return "Out of memory";		//newlib
++  //case ENOSPC:       return "No space left on device";
++  case ENOSYS:       return "Function not implemented";	//newlib
++  case EROFS:        return "Read-only filesystem";  //MMCFS
++  }
++  (void)sprintf(buf, "errno=%d", e & 255);
++  return(buf);
++}

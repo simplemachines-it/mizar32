@@ -1,0 +1,34 @@
+Index: elua/src/lua/lua.c
+===================================================================
+--- elua.orig/src/lua/lua.c	2011-03-23 03:16:01.933615001 +0100
++++ elua/src/lua/lua.c	2011-03-23 03:17:32.665615005 +0100
+@@ -5,7 +5,11 @@
+ */
+ 
+ 
++#ifndef NO_SIGNAL
+ #include <signal.h>
++#else
++#define signal(sig, action) do {} while(0)
++#endif
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+Index: elua/src/lua/luaconf.h
+===================================================================
+--- elua.orig/src/lua/luaconf.h	2011-03-23 03:17:41.965615017 +0100
++++ elua/src/lua/luaconf.h	2011-03-23 03:18:18.125614997 +0100
+@@ -38,6 +38,13 @@
+ 
+ 
+ /*
++@@ NO_SIGNAL removes all calls to signal() since embedded platforms don't
++** have Posix signals.
++*/
++#define NO_SIGNAL
++
++
++/*
+ @@ LUA_ANSI controls the use of non-ansi features.
+ ** CHANGE it (define it) if you want Lua to avoid the use of any
+ ** non-ansi feature or library.

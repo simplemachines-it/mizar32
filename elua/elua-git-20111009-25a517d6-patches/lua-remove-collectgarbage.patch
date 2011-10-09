@@ -1,0 +1,15 @@
+Index: elua/src/lua/lbaselib.c
+===================================================================
+--- elua.orig/src/lua/lbaselib.c	2011-07-23 18:18:20.910124888 +0200
++++ elua/src/lua/lbaselib.c	2011-07-23 18:19:45.022541986 +0200
+@@ -447,10 +447,8 @@
+ 
+ #define LUA_BASELIB_FUNCLIST\
+   {LSTRKEY("assert"), LFUNCVAL(luaB_assert)},\
+-  {LSTRKEY("collectgarbage"), LFUNCVAL(luaB_collectgarbage)},\
+   {LSTRKEY("dofile"), LFUNCVAL(luaB_dofile)},\
+   {LSTRKEY("error"), LFUNCVAL(luaB_error)},\
+-  {LSTRKEY("gcinfo"), LFUNCVAL(luaB_gcinfo)},\
+   {LSTRKEY("getfenv"), LFUNCVAL(luaB_getfenv)},\
+   {LSTRKEY("getmetatable"), LFUNCVAL(luaB_getmetatable)},\
+   {LSTRKEY("loadfile"), LFUNCVAL(luaB_loadfile)},\

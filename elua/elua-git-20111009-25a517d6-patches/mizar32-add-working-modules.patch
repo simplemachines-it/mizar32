@@ -1,0 +1,63 @@
+Now that all the code size hacks have been applied, we can include all the
+working modules in the Mizar32 build.
+Note: to fit into 120KB of flash, AVR32 gcc-4.3.2 toolchain is not good enough.
+It fits when using gcc-4.4 https://github.com/jsnyder/avr32-toolchain
+
+Index: elua/src/platform/avr32/MIZAR32/mizar32_conf.h
+===================================================================
+--- elua.orig/src/platform/avr32/MIZAR32/mizar32_conf.h	2011-10-09 22:57:44.372401314 +0200
++++ elua/src/platform/avr32/MIZAR32/mizar32_conf.h	2011-10-09 23:02:03.773687609 +0200
+@@ -29,6 +29,8 @@
+ #if defined( ELUA_CPU_AT32UC3A0128 )
+   // Build options for 120KB image
+ # define RAM_SIZE 0x8000
++# define BUILD_ADC
++# define BUILD_TERM
+ #else
+   // Build options for 256KB and 512KB flash
+ # define RAM_SIZE 0x10000
+@@ -116,13 +118,32 @@
+ #define PLATLINE
+ #endif
+ 
++#if defined( BUILD_TERM )
++#define TERMLINE _ROM( AUXLIB_TERM, luaopen_term, term_map )
++#else
++#define TERMLINE
++#endif
++
+ #if defined( ELUA_CPU_AT32UC3A0128 )
+ 
+ // Minimal ROM modules, to fit in 120KB
++// Note these fit in 120KB if you compile using jsnyder gcc-4.4
++// but do not fit if you use Atmel gcc-4.3.2
+ #define LUA_PLATFORM_LIBS_ROM\
++  ADCLINE\
++  _ROM( AUXLIB_BIT, luaopen_bit, bit_map )\
++  _ROM( AUXLIB_CPU, luaopen_cpu, cpu_map )\
++  _ROM( AUXLIB_ELUA, luaopen_elua, elua_map )\
++  _ROM( AUXLIB_I2C, luaopen_i2c, i2c_map )\
++  _ROM( AUXLIB_PACK, luaopen_pack, pack_map )\
+   _ROM( AUXLIB_PD, luaopen_pd, pd_map )\
+   _ROM( AUXLIB_PIO, luaopen_pio, pio_map )\
++  _ROM( AUXLIB_PWM, luaopen_pwm, pwm_map )\
++  _ROM( AUXLIB_SPI, luaopen_spi, spi_map )\
+   _ROM( AUXLIB_TMR, luaopen_tmr, tmr_map )\
++  _ROM( AUXLIB_UART, luaopen_uart, uart_map )\
++  PLATLINE\
++  _ROM( LUA_MATHLIBNAME, luaopen_math, math_map )
+ 
+ #else
+ 
+@@ -141,9 +162,9 @@
+   RPCLINE\
+   _ROM( AUXLIB_BIT, luaopen_bit, bit_map )\
+   _ROM( AUXLIB_PACK, luaopen_pack, pack_map )\
+-  _ROM( AUXLIB_TERM, luaopen_term, term_map )\
+-  _ROM( LUA_MATHLIBNAME, luaopen_math, math_map )\
++  TERMLINE\
+   PLATLINE\
++  _ROM( LUA_MATHLIBNAME, luaopen_math, math_map )
+ 
+ #endif
+ 

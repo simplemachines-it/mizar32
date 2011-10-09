@@ -1,0 +1,12 @@
+Index: elua/src/buf.c
+===================================================================
+--- elua.orig/src/buf.c	2011-07-23 18:02:32.349421227 +0200
++++ elua/src/buf.c	2011-07-23 18:02:44.673482340 +0200
+@@ -123,7 +123,6 @@
+     return PLATFORM_ERR;    
+   if( pbuf->count > BUF_REALSIZE( pbuf ) )
+   {
+-    fprintf( stderr, "[ERROR] Buffer overflow on resid=%d, resnum=%d!\n", resid, resnum );
+     return PLATFORM_ERR; 
+   }
+   DUFF_DEVICE_8( BUF_REALDSIZE( pbuf ),  *d++ = *s++ );
