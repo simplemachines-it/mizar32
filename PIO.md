@@ -1,0 +1,1 @@
+This page has moved to [wikibooks](http://en.wikibooks.org/wiki/Mizar32/PIO).

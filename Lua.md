@@ -1,0 +1,1 @@
+This page has moved into [wikibooks](http://en.wikibooks.org/wiki/Mizar32/Software).

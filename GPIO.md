@@ -1,0 +1,1 @@
+This page has move to [wikibooks](http://en.wikibooks.org/wiki/Mizar32/GPIO).
